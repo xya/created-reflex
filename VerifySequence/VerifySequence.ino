@@ -40,7 +40,7 @@ struct button {
 };
 
 struct button buttons[BUTTONS];
-int debounce_time = 100;
+int debounce_time = 10;
 
 // Sequences
 #define SEQ_LEN 3
@@ -196,11 +196,11 @@ int compareSequences(struct sequence *seq_a, struct sequence *seq_b) {
 void verifySequence() {
   int cmp = compareSequences(&current_seq, &user_seq);
   int color = cmp != 0 ? LED_RED : LED_GREEN;
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 10; i++) {
     showColor(color);
-    delay(250);
+    delay(100);
     hideColor();
-    delay(250);
+    delay(100);
   }
   state = STATE_END;
 }
@@ -208,7 +208,7 @@ void verifySequence() {
 void loop() {
   switch (state) {
   default:
-    delay(5000);
+    delay(2000);
     reset();
     break;
   case STATE_GENERATE_SEQ:
