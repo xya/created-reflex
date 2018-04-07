@@ -1,5 +1,6 @@
 #define BUTTONS 3
 int led_state;
+int led_pin = 4;
 int button_pins[BUTTONS] = {0, 1, 2};
 int current_state[BUTTONS];
 int previous_state[BUTTONS];
@@ -12,7 +13,7 @@ void setup() {
     previous_state[i] = 1;
     pinMode(button_pins[i], INPUT_PULLUP);
   }
-  pinMode(4, OUTPUT);
+  pinMode(led_pin, OUTPUT);
 }
 
 // the loop function runs over and over again forever
@@ -32,9 +33,9 @@ void loop() {
   }
   
   if (led_state == 0) {
-    digitalWrite(4, LOW);    
+    digitalWrite(led_pin, LOW);
   } else {
-    digitalWrite(4, HIGH);
+    digitalWrite(led_pin, HIGH);
   }
   
   delay(10);                       // wait for a second
