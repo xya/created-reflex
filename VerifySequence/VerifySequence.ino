@@ -50,19 +50,27 @@ struct sequence {
 };
 
 struct sequence current_seq;
-int current_seq_pos = 0;
+int current_seq_pos;
 
 struct sequence user_seq;
 
-int time_on = 250;
-int time_off = 250;
+const int time_on = 250;
+const int time_off = 250;
 
 void setup() {
-  state = STATE_GENERATE_SEQ;
   for (int i = 0; i < LEDS; i++) {
     pinMode(led_pins[i], OUTPUT);
     digitalWrite(led_pins[i], LOW);
   }
+  randomSeed(analogRead(0));
+#ifdef DEBUG_USB
+  Serial.begin(9600);
+#endif
+  reset();
+}
+
+void reset() {
+  state = STATE_GENERATE_SEQ;
   for (int i = 0; i < BUTTONS; i++) {
     struct button *b = &buttons[i];
     b->id = i;
@@ -72,13 +80,9 @@ void setup() {
     b->pending_timestamp = 0;
     pinMode(button_pins[i], INPUT_PULLUP);
   }
-  randomSeed(analogRead(0));
+  current_seq_pos = 0;
   current_seq.count = 0;
   user_seq.count = 0;
-
-#ifdef DEBUG_USB
-  Serial.begin(9600);
-#endif
 }
 
 void showColor(int color) {
@@ -204,7 +208,8 @@ void verifySequence() {
 void loop() {
   switch (state) {
   default:
-    delay(1000);
+    delay(5000);
+    reset();
     break;
   case STATE_GENERATE_SEQ:
     generateSequence(&current_seq);
