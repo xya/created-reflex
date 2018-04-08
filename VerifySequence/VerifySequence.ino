@@ -16,11 +16,15 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define STATE_VERIFY_SEQ 3
 #define STATE_SHOW_SCORE 4
 #define STATE_END_ROUND 5
+#define STATE_END_GAME 6
 int state;
-int round_id;
+#define SCORE_LIMIT 100
 int score;
 int max_score;
+#define MAX_ROUNDS 25
+int round_id;
 int cur_seq_len;
+int cur_attempt;
 
 // LEDs
 #define LEDS 3
@@ -57,10 +61,10 @@ struct button buttons[BUTTONS];
 int debounce_time = 10;
 
 // Sequences
-#define SEQ_LEN 3
+#define MAX_SEQ_LEN 10
 struct sequence {
   int count;
-  int values[SEQ_LEN];
+  int values[MAX_SEQ_LEN];
 };
 
 struct sequence current_seq;
@@ -91,11 +95,19 @@ void setup() {
   score = 0;
   max_score = 0;
   cur_seq_len = 3;
+  cur_attempt = -1;
   newRound();
 }
 
 void newRound() {
   round_id++;
+  cur_attempt++;
+  if (cur_attempt == cur_seq_len) {
+    cur_attempt = 0;
+    if (cur_seq_len < MAX_SEQ_LEN) {
+      cur_seq_len++;
+    }
+  }
   state = STATE_GENERATE_SEQ;
   for (int i = 0; i < BUTTONS; i++) {
     struct button *b = &buttons[i];
@@ -166,14 +178,14 @@ void readButton(struct button *b) {
 }
 
 void generateSequence(struct sequence *seq) {
-  for (int i = 0; i < SEQ_LEN; i++) {
+  for (int i = 0; i < cur_seq_len; i++) {
     seq->values[i] = random(0, LEDS);
     seq->count++;
   }
 }
 
 void showSequence(struct sequence *seq, int *current_index) {
-  if (*current_index < SEQ_LEN) {
+  if (*current_index < cur_seq_len) {
     int led = seq->values[*current_index];
     showColor(led);
     delay(time_on);
@@ -186,7 +198,7 @@ void showSequence(struct sequence *seq, int *current_index) {
 }
 
 void inputSequence(struct sequence *seq) {
-  if (seq->count < SEQ_LEN) {
+  if (seq->count < cur_seq_len) {
     for (int i = 0; i < BUTTONS; i++) {
       readButton(&buttons[i]);
     }
@@ -258,17 +270,32 @@ void verifySequence() {
   delay(1000);
 #endif
 
-  state = STATE_SHOW_SCORE;
+  if ((score < SCORE_LIMIT) && (round_id < MAX_ROUNDS)) {
+    state = STATE_SHOW_SCORE;
+  } else {
+    state = STATE_END_GAME;
+  }
 }
 
 void showScore() {
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println("Score:");
+  display.print("P1:");
   display.println(score);
   display.display();
   delay(2000);
   state = STATE_END_ROUND;
+}
+
+void showFinalScore() {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("P1:");
+  display.print(score);
+  display.print("/");
+  display.println(max_score);
+  display.display();
+  delay(2000);
 }
 
 void loop() {
@@ -293,6 +320,9 @@ void loop() {
     break;
   case STATE_SHOW_SCORE:
     showScore();
+    break;
+  case STATE_END_GAME:
+    showFinalScore();
     break;
   } 
 }
