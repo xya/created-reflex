@@ -1,0 +1,4 @@
+Pin 1 (VCC) to 5V
+Pin 2 (GND) to GND
+Pin 3 (SCL) to A5
+Pin 4 (SDA) to A4
