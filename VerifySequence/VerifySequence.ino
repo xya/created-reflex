@@ -1,5 +1,14 @@
 // #define USB_DEBUG
 
+// Display
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+
 // General state
 #define STATE_GENERATE_SEQ 0
 #define STATE_SHOW_SEQ 1
@@ -63,9 +72,16 @@ void setup() {
     digitalWrite(led_pins[i], LOW);
   }
   randomSeed(analogRead(0));
+
 #ifdef DEBUG_USB
   Serial.begin(9600);
 #endif
+
+  // Init the display.
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+
   reset();
 }
 
@@ -83,6 +99,8 @@ void reset() {
   current_seq_pos = 0;
   current_seq.count = 0;
   user_seq.count = 0;
+  display.clearDisplay();
+  display.display();
 }
 
 void showColor(int color) {
@@ -195,7 +213,17 @@ int compareSequences(struct sequence *seq_a, struct sequence *seq_b) {
 
 void verifySequence() {
   int cmp = compareSequences(&current_seq, &user_seq);
-  int color = cmp != 0 ? LED_RED : LED_GREEN;
+  int color;
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  if (cmp == 0) {
+    display.println("Correct!");
+    color = LED_GREEN;
+  } else {
+    display.println("Incorrect");
+    color = LED_RED;
+  }
+  display.display();
   for (int i = 0; i < 10; i++) {
     showColor(color);
     delay(100);
