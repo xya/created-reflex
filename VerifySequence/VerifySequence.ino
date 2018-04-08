@@ -195,6 +195,7 @@ int compareSequences(struct sequence *seq_a, struct sequence *seq_b) {
   if (seq_a->count != seq_b->count) {
     return seq_a->count - seq_b->count;
   }
+  int num_mistakes = 0;
   for (int i = 0; i < seq_a->count; i++) {
     if (seq_a->values[i] != seq_b->values[i]) {
 #ifdef DEBUG_USB
@@ -205,22 +206,24 @@ int compareSequences(struct sequence *seq_a, struct sequence *seq_b) {
       Serial.print(", actual ");
       Serial.println(seq_b->values[i]);
 #endif
-      return seq_a->values[i] - seq_b->values[i];
+      num_mistakes++;
     }
   }
-  return 0;
+  return num_mistakes;
 }
 
 void verifySequence() {
-  int cmp = compareSequences(&current_seq, &user_seq);
+  int num_mistakes = compareSequences(&current_seq, &user_seq);
   int color;
   display.clearDisplay();
   display.setCursor(0, 0);
-  if (cmp == 0) {
+  if (num_mistakes == 0) {
     display.println("Correct!");
     color = LED_GREEN;
   } else {
-    display.println("Incorrect");
+    display.print(current_seq.count - num_mistakes);
+    display.print(" of ");
+    display.println(current_seq.count);
     color = LED_RED;
   }
   display.display();
