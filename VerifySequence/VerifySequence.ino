@@ -14,9 +14,13 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define STATE_SHOW_SEQ 1
 #define STATE_INPUT_SEQ 2
 #define STATE_VERIFY_SEQ 3
-#define STATE_END 4
+#define STATE_SHOW_SCORE 4
+#define STATE_END_ROUND 5
 int state;
 int round_id;
+int score;
+int max_score;
+int cur_seq_len;
 
 // LEDs
 #define LEDS 3
@@ -84,6 +88,9 @@ void setup() {
   display.setTextColor(WHITE);
 
   round_id = 0;
+  score = 0;
+  max_score = 0;
+  cur_seq_len = 3;
   newRound();
 }
 
@@ -106,6 +113,8 @@ void newRound() {
   display.setCursor(0, 0);
   display.print("Round ");
   display.println(round_id);
+  display.print("  x ");
+  display.println(cur_seq_len);
   display.display();
 }
 
@@ -220,6 +229,10 @@ int compareSequences(struct sequence *seq_a, struct sequence *seq_b) {
 
 void verifySequence() {
   int num_mistakes = compareSequences(&current_seq, &user_seq);
+  int num_correct = current_seq.count - num_mistakes;
+  score += num_correct;
+  max_score += current_seq.count;
+  
   int color;
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -227,12 +240,13 @@ void verifySequence() {
     display.println("Correct!");
     color = LED_GREEN;
   } else {
-    display.print(current_seq.count - num_mistakes);
+    display.print(num_correct);
     display.print(" of ");
     display.println(current_seq.count);
     color = LED_RED;
   }
   display.display();
+
 #ifdef LED_FEEDBACK
   for (int i = 0; i < 10; i++) {
     showColor(color);
@@ -241,15 +255,26 @@ void verifySequence() {
     delay(100);
   }
 #else
-  delay(2000);
+  delay(1000);
 #endif
-  state = STATE_END;
+
+  state = STATE_SHOW_SCORE;
+}
+
+void showScore() {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println("Score:");
+  display.println(score);
+  display.display();
+  delay(2000);
+  state = STATE_END_ROUND;
 }
 
 void loop() {
   switch (state) {
   default:
-  case STATE_END:
+  case STATE_END_ROUND:
     delay(2000);
     newRound();
     break;
@@ -265,6 +290,9 @@ void loop() {
     break;
   case STATE_VERIFY_SEQ:
     verifySequence();
+    break;
+  case STATE_SHOW_SCORE:
+    showScore();
     break;
   } 
 }
