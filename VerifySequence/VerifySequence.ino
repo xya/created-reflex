@@ -16,6 +16,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define STATE_VERIFY_SEQ 3
 #define STATE_END 4
 int state;
+int round_id;
 
 // LEDs
 #define LEDS 3
@@ -82,10 +83,12 @@ void setup() {
   display.setTextSize(2);
   display.setTextColor(WHITE);
 
-  reset();
+  round_id = 0;
+  newRound();
 }
 
-void reset() {
+void newRound() {
+  round_id++;
   state = STATE_GENERATE_SEQ;
   for (int i = 0; i < BUTTONS; i++) {
     struct button *b = &buttons[i];
@@ -100,6 +103,9 @@ void reset() {
   current_seq.count = 0;
   user_seq.count = 0;
   display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("Round ");
+  display.println(round_id);
   display.display();
 }
 
@@ -227,20 +233,25 @@ void verifySequence() {
     color = LED_RED;
   }
   display.display();
+#ifdef LED_FEEDBACK
   for (int i = 0; i < 10; i++) {
     showColor(color);
     delay(100);
     hideColor();
     delay(100);
   }
+#else
+  delay(2000);
+#endif
   state = STATE_END;
 }
 
 void loop() {
   switch (state) {
   default:
+  case STATE_END:
     delay(2000);
-    reset();
+    newRound();
     break;
   case STATE_GENERATE_SEQ:
     generateSequence(&current_seq);
